@@ -9,14 +9,17 @@ function register() {
   const email = document.getElementById('email').value;
   const pass = document.getElementById('password').value;
 
-  auth.createUserWithEmailAndPassword(email, pass);
+  auth.createUserWithEmailAndPassword(email, pass)
+    .then(() => alert("Conta criada!"))
+    .catch(err => alert(err.message));
 }
 
 function login() {
   const email = document.getElementById('email').value;
   const pass = document.getElementById('password').value;
 
-  auth.signInWithEmailAndPassword(email, pass);
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(err => alert(err.message));
 }
 
 auth.onAuthStateChanged(u => {

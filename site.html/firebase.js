@@ -1,7 +1,6 @@
-// ⚠️ TROCA PELOS DADOS DO SEU FIREBASE
 const firebaseConfig = {
   apiKey: "SUA_KEY",
-  authDomain: "SEU_DOMINIO",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
   projectId: "SEU_ID"
 };
 
