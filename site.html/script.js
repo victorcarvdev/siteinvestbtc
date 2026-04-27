@@ -4,92 +4,128 @@ let history = [];
 let btcPrice = 0;
 let chart;
 
-// 🔐 AUTH
+// =====================
+// 🔐 LOGIN LOCAL
+// =====================
 function register() {
   const email = document.getElementById('email').value;
   const pass = document.getElementById('password').value;
 
-  auth.createUserWithEmailAndPassword(email, pass)
-    .then(() => alert("Conta criada!"))
-    .catch(err => alert(err.message));
+  if (!email || !pass) return alert("Preencha tudo");
+
+  localStorage.setItem("user", JSON.stringify({ email, pass }));
+  alert("Conta criada!");
 }
 
 function login() {
   const email = document.getElementById('email').value;
   const pass = document.getElementById('password').value;
 
-  auth.signInWithEmailAndPassword(email, pass)
-    .catch(err => alert(err.message));
-}
+  const saved = JSON.parse(localStorage.getItem("user"));
 
-auth.onAuthStateChanged(u => {
-  if (u) {
-    user = u;
+  if (saved && saved.email === email && saved.pass === pass) {
+    user = saved;
+
     document.getElementById('auth').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    loadData();
-  }
-});
 
-// 💰 BTC
+    loadData();
+  } else {
+    alert("Login inválido");
+  }
+}
+
+function logout() {
+  user = null;
+  document.getElementById('auth').style.display = 'block';
+  document.getElementById('app').style.display = 'none';
+}
+
+// =====================
+// 💰 BTC API
+// =====================
 async function getBTC() {
   const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=brl');
   const data = await res.json();
   btcPrice = data.bitcoin.brl;
 }
 
-// 💾 BANCO
-async function saveData() {
-  await db.collection('users').doc(user.uid).set({
-    wallets,
-    history
-  });
+// =====================
+// 💾 STORAGE LOCAL
+// =====================
+function saveData() {
+  if (!user) return;
+
+  localStorage.setItem(user.email + "_wallets", JSON.stringify(wallets));
+  localStorage.setItem(user.email + "_history", JSON.stringify(history));
 }
 
-async function loadData() {
-  const doc = await db.collection('users').doc(user.uid).get();
-  if (doc.exists) {
-    wallets = doc.data().wallets || [];
-    history = doc.data().history || [];
-  }
+function loadData() {
+  wallets = JSON.parse(localStorage.getItem(user.email + "_wallets")) || [];
+  history = JSON.parse(localStorage.getItem(user.email + "_history")) || [];
+
   render();
 }
 
-// ➕ carteira
+// =====================
+// ➕ CARTEIRA
+// =====================
 function createWallet() {
   const name = document.getElementById('walletName').value;
-  wallets.push({ name, btc: 0, invested: 0 });
+
+  if (!name) return alert("Nome obrigatório");
+
+  wallets.push({
+    name,
+    btc: 0,
+    invested: 0
+  });
+
   saveData();
   render();
 }
 
-// 💵 compra
+// =====================
+// 💵 COMPRA
+// =====================
 function buy(index) {
   const value = parseFloat(prompt('Valor R$'));
+
+  if (!value || value <= 0) return;
+
   const btc = value / btcPrice;
 
   wallets[index].btc += btc;
   wallets[index].invested += value;
 
-  history.push(`Comprou R$${value}`);
+  history.push(`Comprou R$${value.toFixed(2)}`);
+
   saveData();
   render();
 }
 
-// 💸 venda
+// =====================
+// 💸 VENDA
+// =====================
 function sell(index) {
   const value = parseFloat(prompt('Valor R$'));
+
+  if (!value || value <= 0) return;
+
   const btc = value / btcPrice;
 
   wallets[index].btc -= btc;
   wallets[index].invested -= value;
 
-  history.push(`Vendeu R$${value}`);
+  history.push(`Vendeu R$${value.toFixed(2)}`);
+
   saveData();
   render();
 }
 
-// 📊 gráfico
+// =====================
+// 📊 GRÁFICO
+// =====================
 function renderChart() {
   const ctx = document.getElementById('chart');
 
@@ -110,7 +146,9 @@ function renderChart() {
   });
 }
 
-// 🧾 histórico
+// =====================
+// 🧾 HISTÓRICO
+// =====================
 function renderHistory() {
   const ul = document.getElementById('history');
   ul.innerHTML = '';
@@ -120,7 +158,9 @@ function renderHistory() {
   });
 }
 
-// 🧠 render
+// =====================
+// 🧠 RENDER GERAL
+// =====================
 async function render() {
   await getBTC();
 
